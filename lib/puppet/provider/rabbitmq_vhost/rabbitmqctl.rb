@@ -30,7 +30,7 @@ Puppet::Type.type(:rabbitmq_vhost).provide(:rabbitmqctl, :parent => Puppet::Prov
   end
 
   def exists?
-    out = self.class.run_with_retries {
+    self.class.run_with_retries {
       rabbitmqctl('-q', 'list_vhosts')
     }.split(/\n/).detect do |line|
       line.match(/^#{Regexp.escape(resource[:name])}$/)

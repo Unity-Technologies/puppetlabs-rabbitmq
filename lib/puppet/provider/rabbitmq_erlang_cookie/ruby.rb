@@ -21,7 +21,7 @@ Puppet::Type.type(:rabbitmq_erlang_cookie).provide(:ruby) do
         cookie.chmod(0400)
         cookie.write(value)
       end
-      FileUtils.chown('rabbitmq', 'rabbitmq', resource[:path])
+      FileUtils.chown_R('rabbitmq', 'rabbitmq', resource[:path])
     else
       fail("The current erlang cookie needs to change. In order to do this the RabbitMQ database needs to be wiped.  Please set force => true to allow this to happen automatically.")
     end

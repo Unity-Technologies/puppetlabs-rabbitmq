@@ -1,6 +1,5 @@
 class Puppet::Provider::Rabbitmqctl < Puppet::Provider
   initvars
-  commands :rabbitmqctl => 'rabbitmqctl'
 
   def self.rabbitmq_version
     output = rabbitmqctl('-q', 'status')

@@ -36,7 +36,6 @@ Puppet::Type.type(:rabbitmq_exchange).provide(:rabbitmqadmin, :parent => Puppet:
   end
 
   def self.all_exchanges(vhost)
-    exchanges = []
     parse_command(
       self.run_with_retries {
         rabbitmqctl('list_exchanges', '-p', vhost, 'name', 'type')
@@ -50,7 +49,7 @@ Puppet::Type.type(:rabbitmq_exchange).provide(:rabbitmqadmin, :parent => Puppet:
     # while the last line is
     # ...done.
     #
-    cmd_output.split(/\n/)[1..-2]
+    cmd_output.split(/\n/)[1..-1]
   end
 
   def self.instances

@@ -26,7 +26,6 @@ class rabbitmq::install::rabbitmqadmin {
 
   file { '/usr/local/bin/rabbitmqadmin':
     owner   => 'root',
-    group   => 'root',
     source  => '/var/lib/rabbitmq/rabbitmqadmin',
     mode    => '0755',
     require => Staging::File['rabbitmqadmin'],

@@ -77,7 +77,9 @@ class rabbitmq(
   validate_string($default_pass)
   validate_bool($delete_guest_user)
   validate_string($env_config)
-  validate_absolute_path($env_config_path)
+  if $env_config_path != undef {
+    validate_absolute_path($env_config_path)
+  }
   validate_string($erlang_cookie)
   validate_re($management_port, '\d+')
   validate_string($node_ip_address)
