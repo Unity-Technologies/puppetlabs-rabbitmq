@@ -75,14 +75,16 @@ class rabbitmq::config {
     notify  => Class['rabbitmq::service'],
   }
 
-  file { 'rabbitmq-env.config':
-    ensure  => file,
-    path    => $env_config_path,
-    content => template($env_config),
-    owner   => '0',
-    group   => '0',
-    mode    => '0644',
-    notify  => Class['rabbitmq::service'],
+  if $env_config_path != undef {
+    file { 'rabbitmq-env.config':
+      ensure  => file,
+      path    => $env_config_path,
+      content => template($env_config),
+      owner   => '0',
+      group   => '0',
+      mode    => '0644',
+      notify  => Class['rabbitmq::service'],
+    }
   }
 
   file { 'rabbitmqadmin.conf':

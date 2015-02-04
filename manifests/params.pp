@@ -10,6 +10,9 @@ class rabbitmq::params {
       $package_name     = 'rabbitmq'
       $service_name     = 'rabbitmq'
       $version          = '3.1.3-1'
+      $config_path      = '/etc/rabbitmq/rabbitmq.config'
+      $env_config_path  = '/etc/rabbitmq/rabbitmq-env.conf'
+      $plugin_dir       = "/usr/lib/rabbitmq/lib/rabbitmq_server-${version}/plugins"
     }
     'Debian': {
       $package_ensure   = 'installed'
@@ -17,6 +20,18 @@ class rabbitmq::params {
       $service_name     = 'rabbitmq-server'
       $package_provider = 'apt'
       $version          = '3.1.5'
+      $config_path      = '/etc/rabbitmq/rabbitmq.config'
+      $env_config_path  = '/etc/rabbitmq/rabbitmq-env.conf'
+      $plugin_dir       = "/usr/lib/rabbitmq/lib/rabbitmq_server-${version}/plugins"
+    }
+    'FreeBSD': {
+      $package_ensure   = 'installed'
+      $package_name     = 'rabbitmq'
+      $service_name     = 'rabbitmq'
+      $version          = '3.4.3'
+      $config_path      = '/usr/local/etc/rabbitmq/rabbitmq.config'
+      $env_config_path  = undef
+      $plugin_dir       = "/usr/local/lib/erlang/lib/rabbitmq_server-${version}/plugins"
     }
     'RedHat': {
       $package_ensure   = 'installed'
@@ -24,6 +39,9 @@ class rabbitmq::params {
       $service_name     = 'rabbitmq-server'
       $package_provider = 'rpm'
       $version          = '3.1.5-1'
+      $config_path      = '/etc/rabbitmq/rabbitmq.config'
+      $env_config_path  = '/etc/rabbitmq/rabbitmq-env.conf'
+      $plugin_dir       = "/usr/lib/rabbitmq/lib/rabbitmq_server-${version}/plugins"
     }
     'SUSE': {
       $package_ensure   = 'installed'
@@ -31,6 +49,9 @@ class rabbitmq::params {
       $service_name     = 'rabbitmq-server'
       $package_provider = 'zypper'
       $version          = '3.1.5-1'
+      $config_path      = '/etc/rabbitmq/rabbitmq.config'
+      $env_config_path  = '/etc/rabbitmq/rabbitmq-env.conf'
+      $plugin_dir       = "/usr/lib/rabbitmq/lib/rabbitmq_server-${version}/plugins"
     }
     default: {
       fail("The ${module_name} module is not supported on an ${::osfamily} based system.")
@@ -51,16 +72,13 @@ class rabbitmq::params {
   $cluster_nodes              = []
   $config                     = 'rabbitmq/rabbitmq.config.erb'
   $config_cluster             = false
-  $config_path                = '/etc/rabbitmq/rabbitmq.config'
   $config_stomp               = false
   $default_user               = 'guest'
   $default_pass               = 'guest'
   $delete_guest_user          = false
   $env_config                 = 'rabbitmq/rabbitmq-env.conf.erb'
-  $env_config_path            = '/etc/rabbitmq/rabbitmq-env.conf'
   $erlang_cookie              = undef
   $node_ip_address            = 'UNSET'
-  $plugin_dir                 = "/usr/lib/rabbitmq/lib/rabbitmq_server-${version}/plugins"
   $port                       = '5672'
   $tcp_keepalive              = false
   $ssl                        = false
