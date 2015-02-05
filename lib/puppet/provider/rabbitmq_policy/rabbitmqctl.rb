@@ -5,6 +5,15 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'rabbitmqctl'))
 Puppet::Type.type(:rabbitmq_policy).provide(:rabbitmqctl, :parent => Puppet::Provider::Rabbitmqctl) do
 
   defaultfor :feature => :posix
+  if Facter.value(:osfamily) == 'FreeBSD'
+    has_command(:rabbitmqctl, '/usr/local/sbin/rabbitmqctl') do
+      environment :HOME => "/tmp"
+    end
+  else
+    has_command(:rabbitmqctl, 'rabbitmqctl') do
+      environment :HOME => "/tmp"
+    end
+  end
 
   # cache policies
   def self.policies(name, vhost)

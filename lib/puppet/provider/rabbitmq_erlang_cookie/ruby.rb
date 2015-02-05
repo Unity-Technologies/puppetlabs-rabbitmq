@@ -3,8 +3,14 @@ require 'set'
 Puppet::Type.type(:rabbitmq_erlang_cookie).provide(:ruby) do
 
   defaultfor :feature => :posix
-  has_command(:puppet, 'puppet') do
-    environment :PATH => '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'
+  if Facter.value(:osfamily) == 'FreeBSD'
+    has_command(:puppet, '/usr/local/bin/puppet') do
+      environment :PATH => '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'
+    end
+  else
+    has_command(:puppet, 'puppet') do
+      environment :PATH => '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'
+    end
   end
 
   def exists?

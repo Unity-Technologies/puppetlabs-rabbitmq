@@ -6,13 +6,17 @@ Puppet::Type.type(:rabbitmq_exchange).provide(:rabbitmqadmin, :parent => Puppet:
     commands :rabbitmqctl   => 'rabbitmqctl'
     commands :rabbitmqadmin => '/usr/local/bin/rabbitmqadmin'
   else
-    has_command(:rabbitmqctl, 'rabbitmqctl') do
-      environment :HOME => "/tmp"
-      environment :PATH => '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'
+    if Facter.value(:osfamily) == 'FreeBSD'
+      has_command(:rabbitmqctl, '/usr/local/sbin/rabbitmqctl') do
+        environment :HOME => "/tmp"
+      end
+    else
+      has_command(:rabbitmqctl, 'rabbitmqctl') do
+        environment :HOME => "/tmp"
+      end
     end
     has_command(:rabbitmqadmin, '/usr/local/bin/rabbitmqadmin') do
       environment :HOME => "/tmp"
-      environment :PATH => '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'
     end
   end
   defaultfor :feature => :posix

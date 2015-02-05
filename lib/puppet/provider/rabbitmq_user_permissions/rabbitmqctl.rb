@@ -4,10 +4,15 @@ Puppet::Type.type(:rabbitmq_user_permissions).provide(:rabbitmqctl, :parent => P
   if Puppet::PUPPETVERSION.to_f < 3
     commands :rabbitmqctl => 'rabbitmqctl'
   else
-     has_command(:rabbitmqctl, 'rabbitmqctl') do
-       environment :HOME => "/tmp"
-       environment :PATH => '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'
-     end
+    if Facter.value(:osfamily) == 'FreeBSD'
+      has_command(:rabbitmqctl, '/usr/local/sbin/rabbitmqctl') do
+        environment :HOME => "/tmp"
+      end
+    else
+      has_command(:rabbitmqctl, 'rabbitmqctl') do
+        environment :HOME => "/tmp"
+      end
+    end
   end
 
   defaultfor :feature=> :posix
