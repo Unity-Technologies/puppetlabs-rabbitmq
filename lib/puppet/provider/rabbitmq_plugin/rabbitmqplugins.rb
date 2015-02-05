@@ -11,10 +11,12 @@ Puppet::Type.type(:rabbitmq_plugin).provide(:rabbitmqplugins, :parent => Puppet:
     if Facter.value(:osfamily) == 'RedHat'
       has_command(:rabbitmqplugins, '/usr/lib/rabbitmq/bin/rabbitmq-plugins') do
         environment :HOME => "/tmp"
+        environment :PATH => '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'
       end
     else
       has_command(:rabbitmqplugins, 'rabbitmq-plugins') do
         environment :HOME => "/tmp"
+        environment :PATH => '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'
       end
     end
   end

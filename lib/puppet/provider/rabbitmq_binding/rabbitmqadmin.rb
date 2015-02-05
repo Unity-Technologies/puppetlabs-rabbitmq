@@ -8,9 +8,11 @@ Puppet::Type.type(:rabbitmq_binding).provide(:rabbitmqadmin) do
   else
     has_command(:rabbitmqctl, 'rabbitmqctl') do
       environment :HOME => "/tmp"
+      environment :PATH => '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'
     end
     has_command(:rabbitmqadmin, '/usr/local/bin/rabbitmqadmin') do
       environment :HOME => "/tmp"
+      environment :PATH => '/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin'
     end
   end
   defaultfor :feature => :posix
