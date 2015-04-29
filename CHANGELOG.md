@@ -1,5 +1,61 @@
-## 2014-12-22 - Version 5.0.0
+## 2015-04-28 - Version 5.2.0
+###Summary
+This release adds several new features for expanded configuration, support for SSL Ciphers, several bugfixes, and improved tests.
 
+####Features
+- New parameters to class `rabbitmq`
+  - `ssl_ciphers`
+- New parameters to class `rabbitmq::config`
+  - `interface`
+  - `ssl_interface`
+- New parameters to type `rabbitmq_exchange`
+  - `internal`
+  - `auto_delete`
+  - `durable`
+- Adds syncing with Modulesync
+- Adds support for SSL Ciphers
+- Adds `file_limit` support for RedHat platforms
+
+####Bugfixes
+- Will not create `rabbitmqadmin.conf` if admin is disabled
+- Fixes `check_password`
+- Fix to allow bindings and queues to be created when non-default management port is being used by rabbitmq. (MODULES-1856)
+- `rabbitmq_policy` converts known parameters to integers
+- Updates apt key for full fingerprint compliance.
+- Adds a missing `routing_key` param to rabbitmqadmin absent binding call.
+
+## 2015-03-10 - Version 5.1.0
+###Summary
+This release adds several features for greater flexibility in configuration of rabbitmq, includes a number of bug fixes, and bumps the minimum required version of puppetlabs-stdlib to 3.0.0.
+
+####Changes to defaults
+- The default environment variables in `rabbitmq::config` have been renamed from `RABBITMQ_NODE_PORT` and `RABBITMQ_NODE_IP_ADDRESS` to `NODE_PORT` and `NODE_IP_ADDRESS` (MODULES-1673)
+
+####Features
+- New parameters to class `rabbitmq`
+  - `file_limit`
+  - `interface`
+  - `ldap_other_bind`
+  - `ldap_config_variables`
+  - `ssl_interface`
+  - `ssl_versions`
+  - `rabbitmq_group`
+  - `rabbitmq_home`
+  - `rabbitmq_user`
+- Add `rabbitmq_queue` and `rabbitmq_binding` types
+- Update the providers to be able to retry commands
+
+####Bugfixes
+- Cleans up the formatting for rabbitmq.conf for readability
+- Update tag splitting in the `rabbitmqctl` provider for `rabbitmq_user` to work with comma or space separated tags
+- Do not enforce the source value for the yum provider (MODULES-1631)
+- Fix conditional around `$pin`
+- Remove broken SSL option in rabbitmqadmin.conf (MODULES-1691)
+- Fix issues in `rabbitmq_user` with admin and no tags
+- Fix issues in `rabbitmq_user` with tags not being sorted
+- Fix broken check for existing exchanges in `rabbitmq_exchange`
+
+## 2014-12-22 - Version 5.0.0
 ### Summary
 
 This release fixes a longstanding security issue where the rabbitmq
@@ -53,7 +109,6 @@ and fixes several bugs.
 - Update docs
 
 ## 2014-08-20 - Version 4.1.0
-
 ### Summary
 
 This release adds several new features, fixes bugs, and improves tests and
@@ -77,7 +132,6 @@ from Python script
 - Added missing $ssl_verify and $ssl_fail_if_no_peer_cert to rabbitmq::config
 
 ## 2014-05-16 - Version 4.0.0
-
 ### Summary
 
 This release includes many new features and bug fixes.  With the exception of
@@ -114,7 +168,6 @@ the README for more information on how to configure this.
 
 
 ## 2013-09-14 - Version 3.1.0
-
 ### Summary
 
 This release focuses on a few small (but critical) bugfixes as well as extends
@@ -132,7 +185,6 @@ the amount of custom RabbitMQ configuration you can do with the module.
 - Make the module pull down 3.1.5 by default.
 
 ## 2013-07-18 3.0.0
-
 ### Summary
 
 This release heavily refactors the RabbitMQ and changes functionality in

@@ -36,7 +36,7 @@ Puppet::Type.type(:rabbitmq_user).provide(:rabbitmqctl, :parent => Puppet::Provi
     if resource[:admin] == :true
       make_user_admin()
     end
-    if !resource[:tags].nil?
+    if ! resource[:tags].empty?
       set_user_tags(resource[:tags])
     end
   end
@@ -51,8 +51,8 @@ Puppet::Type.type(:rabbitmq_user).provide(:rabbitmqctl, :parent => Puppet::Provi
 
 
   def check_password
-    response = rabbitmqctl('eval', 'rabbit_auth_backend_internal:check_user_login(<<"' + resource[:name] + '">>, [{password, <<"' + resource[:password] +'">>}]).')
-    if response.include? 'invalid credentials'
+    response = rabbitmqctl('eval', 'rabbit_access_control:check_user_pass_login(list_to_binary("' + resource[:name] + '"), list_to_binary("' + resource[:password] +'")).')
+    if response.include? 'refused'
         false
     else
         true
@@ -73,7 +73,12 @@ Puppet::Type.type(:rabbitmq_user).provide(:rabbitmqctl, :parent => Puppet::Provi
 
 
   def tags
-    get_user_tags.entries.sort
+    tags = get_user_tags
+    # do not expose the administrator tag for admins
+    if resource[:admin] == :true
+      tags.delete('administrator')
+    end
+    tags.entries.sort
   end
 
 

@@ -6,7 +6,7 @@ describe 'rabbitmq' do
     let(:facts) {{ :osfamily => 'Unsupported' }}
 
     it 'we fail' do
-      expect { subject }.to raise_error(/not supported on an Unsupported/)
+      expect { catalogue }.to raise_error(Puppet::Error, /not supported on an Unsupported/)
     end
   end
 
@@ -132,10 +132,39 @@ describe 'rabbitmq' do
   end
 
   context 'on Debian' do
-    let(:params) {{ :manage_repos => false, :repos_ensure => false }}
     let(:facts) {{ :osfamily => 'Debian', :lsbdistid => 'Debian', :lsbdistcodename => 'squeeze' }}
-    it 'does ensure rabbitmq apt::source is absent when manage_repos is false and repos_ensure is false' do
-      should_not contain_apt__source('rabbitmq')
+    context 'with manage_repos => false and repos_ensure => false' do
+      let(:params) {{ :manage_repos => false, :repos_ensure => false }}
+      it 'does ensure rabbitmq apt::source is absent when manage_repos is false and repos_ensure is false' do
+        should_not contain_apt__source('rabbitmq')
+      end
+    end
+
+    context 'with file_limit => unlimited' do
+      let(:params) {{ :file_limit => 'unlimited' }}
+      it { should contain_file('/etc/default/rabbitmq-server').with_content(/ulimit -n unlimited/) }
+    end
+
+    context 'with file_limit => infinity' do
+      let(:params) {{ :file_limit => 'infinity' }}
+      it { should contain_file('/etc/default/rabbitmq-server').with_content(/ulimit -n infinity/) }
+    end
+
+    context 'with file_limit => -1' do
+      let(:params) {{ :file_limit => -1 }}
+      it { should contain_file('/etc/default/rabbitmq-server').with_content(/ulimit -n -1/) }
+    end
+
+    context 'with file_limit => \'1234\'' do
+      let(:params) {{ :file_limit => '1234' }}
+      it { should contain_file('/etc/default/rabbitmq-server').with_content(/ulimit -n 1234/) }
+    end
+
+    context 'with file_limit => foo' do
+      let(:params) {{ :file_limit => 'foo' }}
+      it 'does not compile' do
+        expect { catalogue }.to raise_error(Puppet::Error, /\$file_limit must be an integer, 'unlimited', or 'infinity'/)
+      end
     end
   end
 
@@ -219,6 +248,144 @@ describe 'rabbitmq' do
     end
   end
 
+  context 'on RedHat 7.0 or more' do
+    let(:facts) {{ :osfamily => 'RedHat', :operatingsystemmajrelease => '7' }}
+
+    it { should contain_file('/etc/systemd/system/rabbitmq-server.service.d').with(
+      'ensure' => 'directory',
+      'owner'  => '0',
+      'group'  => '0',
+      'mode'   => '0755'
+    ) }
+
+    it { should contain_exec('rabbitmq-systemd-reload').with(
+      'command'     => '/usr/bin/systemctl daemon-reload',
+      'notify'      => 'Class[Rabbitmq::Service]',
+      'refreshonly' => true
+    ) }
+    context 'with file_limit => unlimited' do
+      let(:params) {{ :file_limit => 'unlimited' }}
+      it { should contain_file('/etc/systemd/system/rabbitmq-server.service.d/limits.conf').with(
+        'owner'   => '0',
+        'group'   => '0',
+        'mode'    => '0644',
+        'notify'  => 'Exec[rabbitmq-systemd-reload]',
+        'content' => '[Service]
+LimitNOFILE=unlimited
+'
+      ) }
+    end
+
+    context 'with file_limit => infinity' do
+      let(:params) {{ :file_limit => 'infinity' }}
+      it { should contain_file('/etc/systemd/system/rabbitmq-server.service.d/limits.conf').with(
+        'owner'   => '0',
+        'group'   => '0',
+        'mode'    => '0644',
+        'notify'  => 'Exec[rabbitmq-systemd-reload]',
+        'content' => '[Service]
+LimitNOFILE=infinity
+'
+      ) }
+    end
+
+    context 'with file_limit => -1' do
+      let(:params) {{ :file_limit => -1 }}
+      it { should contain_file('/etc/systemd/system/rabbitmq-server.service.d/limits.conf').with(
+        'owner'   => '0',
+        'group'   => '0',
+        'mode'    => '0644',
+        'notify'  => 'Exec[rabbitmq-systemd-reload]',
+        'content' => '[Service]
+LimitNOFILE=-1
+'
+      ) }
+    end
+
+    context 'with file_limit => \'1234\'' do
+      let(:params) {{ :file_limit => '1234' }}
+      it { should contain_file('/etc/systemd/system/rabbitmq-server.service.d/limits.conf').with(
+        'owner'   => '0',
+        'group'   => '0',
+        'mode'    => '0644',
+        'notify'  => 'Exec[rabbitmq-systemd-reload]',
+        'content' => '[Service]
+LimitNOFILE=1234
+'
+      ) }
+    end
+
+    context 'with file_limit => foo' do
+      let(:params) {{ :file_limit => 'foo' }}
+      it 'does not compile' do
+        expect { catalogue }.to raise_error(Puppet::Error, /\$file_limit must be an integer, 'unlimited', or 'infinity'/)
+      end
+    end
+  end
+
+  context 'on RedHat before 7.0' do
+    let(:facts) {{ :osfamily => 'RedHat', :operatingsystemmajrelease => '6' }}
+
+    context 'with file_limit => unlimited' do
+      let(:params) {{ :file_limit => 'unlimited' }}
+      it { should contain_file('/etc/security/limits.d/rabbitmq-server.conf').with(
+        'owner'   => '0',
+        'group'   => '0',
+        'mode'    => '0644',
+        'notify'  => 'Class[Rabbitmq::Service]',
+        'content' => 'rabbitmq soft nofile unlimited
+rabbitmq hard nofile unlimited
+'
+      ) }
+    end
+
+    context 'with file_limit => infinity' do
+      let(:params) {{ :file_limit => 'infinity' }}
+      it { should contain_file('/etc/security/limits.d/rabbitmq-server.conf').with(
+        'owner'   => '0',
+        'group'   => '0',
+        'mode'    => '0644',
+        'notify'  => 'Class[Rabbitmq::Service]',
+        'content' => 'rabbitmq soft nofile infinity
+rabbitmq hard nofile infinity
+'
+      ) }
+    end
+
+    context 'with file_limit => -1' do
+      let(:params) {{ :file_limit => -1 }}
+      it { should contain_file('/etc/security/limits.d/rabbitmq-server.conf').with(
+        'owner'   => '0',
+        'group'   => '0',
+        'mode'    => '0644',
+        'notify'  => 'Class[Rabbitmq::Service]',
+        'content' => 'rabbitmq soft nofile -1
+rabbitmq hard nofile -1
+'
+      ) }
+    end
+
+    context 'with file_limit => \'1234\'' do
+      let(:params) {{ :file_limit => '1234' }}
+      it { should contain_file('/etc/security/limits.d/rabbitmq-server.conf').with(
+        'owner'   => '0',
+        'group'   => '0',
+        'mode'    => '0644',
+        'notify'  => 'Class[Rabbitmq::Service]',
+        'content' => 'rabbitmq soft nofile 1234
+rabbitmq hard nofile 1234
+'
+      ) }
+    end
+
+    context 'with file_limit => foo' do
+      let(:params) {{ :file_limit => 'foo' }}
+      it 'does not compile' do
+        expect { catalogue }.to raise_error(Puppet::Error, /\$file_limit must be an integer, 'unlimited', or 'infinity'/)
+      end
+    end
+  end
+
   ['Debian', 'RedHat', 'SUSE', 'Archlinux'].each do |distro|
     context "on #{distro}" do
       let(:facts) {{
@@ -231,8 +398,7 @@ describe 'rabbitmq' do
       it { should contain_class('rabbitmq::config') }
       it { should contain_class('rabbitmq::service') }
 
-
-      context 'with admin_enable set to true' do
+     context 'with admin_enable set to true' do
         let(:params) {{ :admin_enable => true }}
         context 'with service_manage set to true' do
           it 'we enable the admin interface by default' do
@@ -287,7 +453,7 @@ describe 'rabbitmq' do
 
         describe 'with defaults' do
           it 'fails' do
-            expect{subject}.to raise_error(/^You must set the \$erlang_cookie value/)
+            expect { catalogue }.to raise_error(Puppet::Error, /You must set the \$erlang_cookie value/)
           end
         end
 
@@ -404,25 +570,27 @@ describe 'rabbitmq' do
 
       describe 'configuring ldap authentication' do
         let :params do
-          { :config_stomp         => true,
-            :ldap_auth            => true,
-            :ldap_server          => 'ldap.example.com',
-            :ldap_user_dn_pattern => 'ou=users,dc=example,dc=com',
-            :ldap_use_ssl         => false,
-            :ldap_port            => '389',
-            :ldap_log             => true
+          { :config_stomp          => true,
+            :ldap_auth             => true,
+            :ldap_server           => 'ldap.example.com',
+            :ldap_user_dn_pattern  => 'ou=users,dc=example,dc=com',
+            :ldap_other_bind       => 'as_user',
+            :ldap_use_ssl          => false,
+            :ldap_port             => '389',
+            :ldap_log              => true,
+            :ldap_config_variables => { 'foo' => 'bar' }
           }
         end
 
         it { should contain_rabbitmq_plugin('rabbitmq_auth_backend_ldap') }
 
         it 'should contain ldap parameters' do
-          verify_contents(subject, 'rabbitmq.config',
+          verify_contents(catalogue, 'rabbitmq.config',
                           ['[', '  {rabbit, [', '    {auth_backends, [rabbit_auth_backend_internal, rabbit_auth_backend_ldap]},', '  ]}',
-                            '  {rabbitmq_auth_backend_ldap, [', '    {other_bind, anon},',
+                            '  {rabbitmq_auth_backend_ldap, [', '    {other_bind, as_user},',
                             '    {servers, ["ldap.example.com"]},',
                             '    {user_dn_pattern, "ou=users,dc=example,dc=com"},', '    {use_ssl, false},',
-                            '    {port, 389},', '    {log, true}'])
+                            '    {port, 389},', '    {foo, bar},', '    {log, true}'])
         end
       end
 
@@ -432,21 +600,23 @@ describe 'rabbitmq' do
             :ldap_auth            => true,
             :ldap_server          => 'ldap.example.com',
             :ldap_user_dn_pattern => 'ou=users,dc=example,dc=com',
+            :ldap_other_bind      => 'as_user',
             :ldap_use_ssl         => false,
             :ldap_port            => '389',
-            :ldap_log             => true
+            :ldap_log             => true,
+            :ldap_config_variables => { 'foo' => 'bar' }
           }
         end
 
         it { should contain_rabbitmq_plugin('rabbitmq_auth_backend_ldap') }
 
         it 'should contain ldap parameters' do
-          verify_contents(subject, 'rabbitmq.config',
+          verify_contents(catalogue, 'rabbitmq.config',
                           ['[', '  {rabbit, [', '    {auth_backends, [rabbit_auth_backend_internal, rabbit_auth_backend_ldap]},', '  ]}',
-                            '  {rabbitmq_auth_backend_ldap, [', '    {other_bind, anon},',
+                            '  {rabbitmq_auth_backend_ldap, [', '    {other_bind, as_user},',
                             '    {servers, ["ldap.example.com"]},',
                             '    {user_dn_pattern, "ou=users,dc=example,dc=com"},', '    {use_ssl, false},',
-                            '    {port, 389},', '    {log, true}'])
+                            '    {port, 389},', '    {foo, bar},', '    {log, true}'])
         end
       end
 
@@ -456,6 +626,16 @@ describe 'rabbitmq' do
           should contain_file('rabbitmq.config').with({
             'content' => /default_user, <<"foo">>.*default_pass, <<"bar">>/m,
           })
+        end
+      end
+
+      describe 'interfaces option with no ssl' do
+        let(:params) {
+          { :interface => '0.0.0.0',
+        } }
+
+        it 'should set ssl options to specified values' do
+          should contain_file('rabbitmq.config').with_content(%r{tcp_listeners, \[\{"0.0.0.0", 5672\}\]})
         end
       end
 
@@ -473,7 +653,10 @@ describe 'rabbitmq' do
             %r{ssl_listeners, \[3141\]}
           )
           should contain_file('rabbitmq.config').with_content(
-            %r{ssl_options, \[\{cacertfile,"/path/to/cacert"}
+            %r{ssl_options, \[}
+          )
+          should contain_file('rabbitmq.config').with_content(
+            %r{cacertfile,"/path/to/cacert"}
           )
           should contain_file('rabbitmq.config').with_content(
             %r{certfile,"/path/to/cert"}
@@ -483,6 +666,27 @@ describe 'rabbitmq' do
           )
         end
       end
+
+
+      describe 'ssl options with ssl_interfaces' do
+        let(:params) {
+          { :ssl => true,
+            :ssl_port => 3141,
+            :ssl_interface => '0.0.0.0',
+            :ssl_cacert => '/path/to/cacert',
+            :ssl_cert => '/path/to/cert',
+            :ssl_key => '/path/to/key'
+        } }
+
+        it 'should set ssl options to specified values' do
+          should contain_file('rabbitmq.config').with_content(%r{ssl_listeners, \[\{"0.0.0.0", 3141\}\]})
+          should contain_file('rabbitmq.config').with_content(%r{cacertfile,"/path/to/cacert"})
+          should contain_file('rabbitmq.config').with_content(%r{certfile,"/path/to/cert"})
+          should contain_file('rabbitmq.config').with_content(%r{keyfile,"/path/to/key})
+        end
+      end
+
+
 
       describe 'ssl options with ssl_only' do
         let(:params) {
@@ -497,7 +701,28 @@ describe 'rabbitmq' do
         it 'should set ssl options to specified values' do
           should contain_file('rabbitmq.config').with_content(%r{tcp_listeners, \[\]})
           should contain_file('rabbitmq.config').with_content(%r{ssl_listeners, \[3141\]})
-          should contain_file('rabbitmq.config').with_content(%r{ssl_options, \[\{cacertfile,"/path/to/cacert"})
+          should contain_file('rabbitmq.config').with_content(%r{ssl_options, \[})
+          should contain_file('rabbitmq.config').with_content(%r{cacertfile,"/path/to/cacert"})
+          should contain_file('rabbitmq.config').with_content(%r{certfile,"/path/to/cert"})
+          should contain_file('rabbitmq.config').with_content(%r{keyfile,"/path/to/key})
+        end
+      end
+
+      describe 'ssl options with ssl_only and ssl_interfaces' do
+        let(:params) {
+          { :ssl => true,
+            :ssl_only => true,
+            :ssl_port => 3141,
+            :ssl_interface => '0.0.0.0',
+            :ssl_cacert => '/path/to/cacert',
+            :ssl_cert => '/path/to/cert',
+            :ssl_key => '/path/to/key'
+        } }
+
+        it 'should set ssl options to specified values' do
+          should contain_file('rabbitmq.config').with_content(%r{tcp_listeners, \[\]})
+          should contain_file('rabbitmq.config').with_content(%r{ssl_listeners, \[\{"0.0.0.0", 3141\}\]})
+          should contain_file('rabbitmq.config').with_content(%r{cacertfile,"/path/to/cacert"})
           should contain_file('rabbitmq.config').with_content(%r{certfile,"/path/to/cert"})
           should contain_file('rabbitmq.config').with_content(%r{keyfile,"/path/to/key})
         end
@@ -515,7 +740,8 @@ describe 'rabbitmq' do
 
         it 'should set ssl options to specified values' do
           should contain_file('rabbitmq.config').with_content(%r{ssl_listeners, \[3141\]})
-          should contain_file('rabbitmq.config').with_content(%r{ssl_options, \[\{cacertfile,"/path/to/cacert"})
+          should contain_file('rabbitmq.config').with_content(%r{ssl_options, \[})
+          should contain_file('rabbitmq.config').with_content(%r{cacertfile,"/path/to/cacert"})
           should contain_file('rabbitmq.config').with_content(%r{certfile,"/path/to/cert"})
           should contain_file('rabbitmq.config').with_content(%r{keyfile,"/path/to/key})
           should contain_file('rabbitmq.config').with_content(%r{ssl, \[\{versions, \['tlsv1.1', 'tlsv1.2'\]\}\]})
@@ -534,7 +760,7 @@ describe 'rabbitmq' do
         } }
 
         it 'fails' do
-          expect{subject}.to raise_error(/is not an Array/)
+          expect { catalogue }.to raise_error(Puppet::Error, /is not an Array/)
         end
       end
 
@@ -549,7 +775,22 @@ describe 'rabbitmq' do
         } }
 
         it 'fails' do
-          expect{subject}.to raise_error(/^\$ssl_versions requires that \$ssl => true/)
+          expect { catalogue }.to raise_error(Puppet::Error, /\$ssl_versions requires that \$ssl => true/)
+        end
+      end
+
+      describe 'ssl options with ssl ciphers' do
+        let(:params) {
+          { :ssl => true,
+            :ssl_port => 3141,
+            :ssl_cacert => '/path/to/cacert',
+            :ssl_cert => '/path/to/cert',
+            :ssl_key => '/path/to/key',
+            :ssl_ciphers => ['ecdhe_rsa,aes_256_cbc,sha', 'dhe_rsa,aes_256_cbc,sha']
+        } }
+
+        it 'should set ssl ciphers to specified values' do
+          should contain_file('rabbitmq.config').with_content(%r{ciphers,\[[[:space:]]+{dhe_rsa,aes_256_cbc,sha},[[:space:]]+{ecdhe_rsa,aes_256_cbc,sha}[[:space:]]+\]})
         end
       end
 
@@ -815,7 +1056,7 @@ describe 'rabbitmq' do
           'release'     => 'testing',
           'repos'       => 'main',
           'include_src' => false,
-          'key'         => 'F7B8CEA6056E8E56'
+          'key'         => 'F78372A06FF50C80464FC1B4F7B8CEA6056E8E56'
         ) }
       end
     end
@@ -829,7 +1070,7 @@ describe 'rabbitmq' do
           'release'     => 'testing',
           'repos'       => 'main',
           'include_src' => false,
-          'key'         => 'F7B8CEA6056E8E56'
+          'key'         => 'F78372A06FF50C80464FC1B4F7B8CEA6056E8E56'
         ) }
 
         it { should contain_apt__pin('rabbitmq').with(

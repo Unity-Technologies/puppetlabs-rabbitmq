@@ -96,6 +96,8 @@ Puppet::Type.type(:rabbitmq_binding).provide(:rabbitmqadmin) do
       vhost_opt,
       "--user=#{resource[:user]}",
       "--password=#{resource[:password]}",
+      '-c',
+      '/etc/rabbitmq/rabbitmqadmin.conf',
       "source=#{name}",
       "destination=#{destination}",
       "arguments=#{arguments.to_json}",
@@ -109,7 +111,7 @@ Puppet::Type.type(:rabbitmq_binding).provide(:rabbitmqadmin) do
     vhost_opt = should_vhost ? "--vhost=#{should_vhost}" : ''
     name = resource[:name].split('@').first
     destination = resource[:name].split('@')[1]
-    rabbitmqadmin('delete', 'binding', vhost_opt, "--user=#{resource[:user]}", "--password=#{resource[:password]}", "source=#{name}", "destination_type=#{resource[:destination_type]}", "destination=#{destination}")
+    rabbitmqadmin('delete', 'binding', vhost_opt, "--user=#{resource[:user]}", "--password=#{resource[:password]}", '-c', '/etc/rabbitmq/rabbitmqadmin.conf', "source=#{name}", "destination_type=#{resource[:destination_type]}", "destination=#{destination}", "properties_key=#{resource[:routing_key]}")
     @property_hash[:ensure] = :absent
   end
 

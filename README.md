@@ -222,7 +222,12 @@ RabbitMQ Environment Variables in rabbitmq_env.config
 The erlang cookie to use for clustering - must be the same between all nodes.
 This value has no default and must be set explicitly if using clustering.
 
-###`key_content`
+####`file_limit`
+
+Set rabbitmq file ulimit. Defaults to 16384. Only available on systems with
+`$::osfamily == 'Debian'` or `$::osfamily == 'RedHat'`.
+
+####`key_content`
 
 Uses content method for Debian OS family. Should be a template for apt::source
 class. Overrides `package_gpg_key` behavior, if enabled. Undefined by default.
@@ -238,6 +243,14 @@ LDAP server to use for auth.
 ####`ldap_user_dn_pattern`
 
 User DN pattern for LDAP auth.
+
+####`ldap_other_bind`
+
+How to bind to the LDAP server. Defaults to 'anon'.
+
+####`ldap_config_variables`
+
+Hash of other LDAP config variables.
 
 ####`ldap_use_ssl`
 
@@ -356,6 +369,14 @@ Choose which SSL versions to enable. Example: `['tlsv1.2', 'tlsv1.1']`.
 
 Note that it is recommended to disable `sslv3` and `tlsv1` to prevent against POODLE and BEAST attacks. Please see the [RabbitMQ SSL](https://www.rabbitmq.com/ssl.html) documentation for more information.
 
+####`ssl_ciphers`
+
+Support only a given list of SSL ciphers. Example: `['dhe_rsa,aes_256_cbc,sha','dhe_dss,aes_256_cbc,sha','ecdhe_rsa,aes_256_cbc,sha']`.
+
+Supported ciphers in your install can be listed with:
+ rabbitmqctl eval 'ssl:cipher_suites().'
+Functionality can be tested with cipherscan or similar tool: https://github.com/jvehent/cipherscan.git
+
 ####`stomp_port`
 
 The port to use for Stomp.
@@ -380,6 +401,18 @@ repository otherwise.
 ####`wipe_db_on_cookie_change`
 
 Boolean to determine if we should DESTROY AND DELETE the RabbitMQ database.
+
+####`rabbitmq_user`
+
+String: OS dependent, default defined in param.pp. The system user the rabbitmq daemon runs as.
+
+####`rabbitmq_group`
+
+String: OS dependent, default defined in param.pp. The system group the rabbitmq daemon runs as.
+
+####`rabbitmq_home`
+
+String: OS dependent. default defined in param.pp. The home directory of the rabbitmq deamon.
 
 ##Native Types
 
@@ -422,6 +455,12 @@ rabbitmq_exchange { 'myexchange@myhost':
   password => 'bar',
   type     => 'topic',
   ensure   => present,
+  internal => false,
+  auto_delete => false,
+  durable => true,
+  arguments => {
+    hash-header => 'message-distribution-hash'
+  }
 }
 ```
 
@@ -493,9 +532,9 @@ rabbitmq_plugin {'rabbitmq_stomp':
 This is essentially a private type used by the rabbitmq::config class
 to manage the erlang cookie. It replaces the rabbitmq_erlang_cookie fact
 from earlier versions of this module. It manages the content of the cookie
-usually located at /var/lib/rabbitmq/.erlang.cookie, which includes
+usually located at "${rabbitmq_home}/.erlang.cookie", which includes
 stopping the rabbitmq service and wiping out the database at
-/var/lib/rabbitmq/mnesia if the user agrees to it. We don't recommend using
+"${rabbitmq_home}/mnesia" if the user agrees to it. We don't recommend using
 this type directly.
 
 ##Limitations
@@ -534,6 +573,10 @@ For Debian systems:
     package { 'erlang-base':
       ensure => 'latest',
     }
+
+This module also depends on the excellent nanliu/staging module on the Forge:
+
+    puppet module install nanliu-staging
 
 ### Downgrade Issues
 

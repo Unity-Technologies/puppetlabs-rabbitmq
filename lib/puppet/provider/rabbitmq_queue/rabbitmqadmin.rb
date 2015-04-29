@@ -93,6 +93,8 @@ Puppet::Type.type(:rabbitmq_queue).provide(:rabbitmqadmin) do
       vhost_opt,
       "--user=#{resource[:user]}",
       "--password=#{resource[:password]}",
+      '-c',
+      '/etc/rabbitmq/rabbitmqadmin.conf',
       "name=#{name}",
       "durable=#{resource[:durable]}",
       "auto_delete=#{resource[:auto_delete]}",
@@ -104,7 +106,7 @@ Puppet::Type.type(:rabbitmq_queue).provide(:rabbitmqadmin) do
   def destroy
     vhost_opt = should_vhost ? "--vhost=#{should_vhost}" : ''
     name = resource[:name].rpartition('@').first
-    rabbitmqadmin('delete', 'queue', vhost_opt, "--user=#{resource[:user]}", "--password=#{resource[:password]}", "name=#{name}")
+    rabbitmqadmin('delete', 'queue', vhost_opt, "--user=#{resource[:user]}", "--password=#{resource[:password]}", '-c', '/etc/rabbitmq/rabbitmqadmin.conf', "name=#{name}")
     @property_hash[:ensure] = :absent
   end
 
