@@ -1,17 +1,9 @@
 require 'beaker-rspec'
+require 'beaker/puppet_install_helper'
+
+run_puppet_install_helper
 
 UNSUPPORTED_PLATFORMS = []
-
-unless ENV['RS_PROVISION'] == 'no' or ENV['BEAKER_provision'] == 'no'
-  if hosts.first.is_pe?
-    install_pe
-  else
-    install_puppet
-  end
-  hosts.each do |host|
-    on hosts, "mkdir -p #{host['distmoduledir']}"
-  end
-end
 
 RSpec.configure do |c|
   # Project root
@@ -26,7 +18,7 @@ RSpec.configure do |c|
       shell("/bin/touch #{default['puppetpath']}/hiera.yaml")
       shell('puppet module install puppetlabs-stdlib', { :acceptable_exit_codes => [0,1] })
       if fact('osfamily') == 'Debian'
-        shell('puppet module install puppetlabs-apt --version 1.8.0 --force', { :acceptable_exit_codes => [0,1] })
+        shell('puppet module install puppetlabs-apt', { :acceptable_exit_codes => [0,1] })
       end
       shell('puppet module install nanliu-staging', { :acceptable_exit_codes => [0,1] })
       if fact('osfamily') == 'RedHat'

@@ -54,7 +54,7 @@ class rabbitmq::params {
       $package_ensure   = 'installed'
       $package_name     = 'rabbitmq-server'
       $service_name     = 'rabbitmq-server'
-      $package_provider = 'rpm'
+      $package_provider = 'yum'
       $version          = '3.1.5-1'
       $config_path      = '/etc/rabbitmq/rabbitmq.config'
       $env_config_path  = '/etc/rabbitmq/rabbitmq-env.conf'
@@ -84,6 +84,7 @@ class rabbitmq::params {
   #install
   $admin_enable               = true
   $management_port            = '15672'
+  $management_ssl             = true
   $package_apt_pin            = ''
   $package_gpg_key            = 'http://www.rabbitmq.com/rabbitmq-signing-key-public.asc'
   $repos_ensure               = true
@@ -96,6 +97,8 @@ class rabbitmq::params {
   $config                     = 'rabbitmq/rabbitmq.config.erb'
   $config_cluster             = false
   $config_stomp               = false
+  $config_shovel              = false
+  $config_shovel_statics      = {}
   $default_user               = 'guest'
   $default_pass               = 'guest'
   $delete_guest_user          = false
@@ -128,10 +131,13 @@ class rabbitmq::params {
   $ldap_log                   = false
   $ldap_config_variables      = {}
   $stomp_port                 = '6163'
+  $stomp_ssl_only             = false
   $wipe_db_on_cookie_change   = false
   $cluster_partition_handling = 'ignore'
   $environment_variables      = {}
   $config_variables           = {}
   $config_kernel_variables    = {}
-  $file_limit                 = 16384
+  $config_management_variables = {}
+  $auth_backends              = undef
+  $file_limit                 = '16384'
 }

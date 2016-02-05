@@ -5,16 +5,26 @@
   {ssl, [{versions, [<%= @ssl_versions.sort.map { |v| "'#{v}'" }.join(', ') %>]}]},
 <%- end -%>
   {rabbit, [
-<% if @ldap_auth -%>
+<% if @auth_backends -%>
+    {auth_backends, [<%= @auth_backends.map { |v| "#{v}" }.join(', ') %>]},
+<% elsif @ldap_auth -%>
     {auth_backends, [rabbit_auth_backend_internal, rabbit_auth_backend_ldap]},
 <% end -%>
 <% if @config_cluster -%>
     {cluster_nodes, {[<%= @cluster_nodes.map { |n| "\'rabbit@#{n}\'" }.join(', ') %>], <%= @cluster_node_type %>}},
     {cluster_partition_handling, <%= @cluster_partition_handling %>},
 <% end -%>
-<%- if @tcp_keepalive -%>
-    {tcp_listen_options, [{keepalive, true}]},
-<%- end -%>
+    {tcp_listen_options,
+         [binary,
+         <%- if @tcp_keepalive -%>
+         {keepalive,     true},
+         <%- end -%>
+         {packet,        raw},
+         {reuseaddr,     true},
+         {backlog,       128},
+         {nodelay,       true},
+         {exit_on_close, false}]
+    },
 <%- if @ssl_only -%>
     {tcp_listeners, []},
 <%- elsif @interface != 'UNSET' -%>
@@ -56,13 +66,20 @@
     <%= @config_kernel_variables.sort.map{|k,v| "{#{k}, #{v}}"}.join(",\n    ") %>
   ]}
 <%- end -%>
+<% if @config_management_variables -%>,
+  {rabbitmq_management, [
+    <%= @config_management_variables.sort.map{|k,v| "{#{k}, #{v}}"}.join(",\n    ") %>
+  ]}
+<%- end -%>
 <%- if @admin_enable -%>,
   {rabbitmq_management, [
     {listener, [
-<%- if @ssl -%>
+<%- if @ssl && @management_ssl -%>
       {port, <%= @ssl_management_port %>},
       {ssl, true},
-      {ssl_opts, [<%- if @ssl_cacert != 'UNSET' -%>{cacertfile, "<%= @ssl_cacert %>"},<%- end -%>
+      {ssl_opts, [<%- if @ssl_cacert != 'UNSET' %>
+                  {cacertfile, "<%= @ssl_cacert %>"},
+                  <%- end -%>
 
                   {certfile, "<%= @ssl_cert %>"},
                   {keyfile, "<%= @ssl_key %>"}
@@ -84,8 +101,13 @@
 <% if @config_stomp -%>,
 % Configure the Stomp Plugin listening port
   {rabbitmq_stomp, [
+  <%- if @stomp_ssl_only -%>
+    {tcp_listeners, []}
+  <%- else -%>
     {tcp_listeners, [<%= @stomp_port %>]}
-  <%- if @ssl && @ssl_stomp_port -%>,
+  <%- end -%>
+  <%- if @ssl && @ssl_stomp_port -%>
+    ,
     {ssl_listeners, [<%= @ssl_stomp_port %>]}
   <%- end -%>
   ]}
@@ -105,6 +127,12 @@
 <%- end -%>
     {log, <%= @ldap_log %>}
   ]}
+<%- end -%>
+<%- if @config_shovel and not @config_shovel_statics.empty? -%>,
+  {rabbitmq_shovel,
+    [{shovels,[
+      <%= @config_shovel_statics.sort.map{|k,v| "{#{k},[#{v}]}"}.join(",\n      ") %>
+    ]}]}
 <%- end -%>
 ].
 % EOF
